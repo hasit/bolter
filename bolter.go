@@ -7,6 +7,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
+	"github.com/olekukonko/tablewriter"
 )
 
 func main() {
@@ -88,10 +89,14 @@ func (i *impl) listBucketItems(bucket string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Key\tValue:\n")
+	fmt.Printf("Bucket: %s\n", bucket)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Key", "Value"})
 	for _, item := range items {
-		fmt.Printf("%s\t%s\n", item.Key, item.Value)
+		row := []string{item.Key, item.Value}
+		table.Append(row)
 	}
+	table.Render()
 }
 
 func (i *impl) listBuckets() {
@@ -105,8 +110,11 @@ func (i *impl) listBuckets() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Buckets:\n")
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Buckets"})
 	for _, b := range buckets {
-		fmt.Printf("%s\n", b.Name)
+		row := []string{b.Name}
+		table.Append(row)
 	}
+	table.Render()
 }
