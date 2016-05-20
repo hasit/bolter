@@ -13,21 +13,20 @@ $ go get github.com/hasit/bolter
 ```
 $ bolter
 NAME:
-   bolter - view boltdb file in your terminal
-
-USAGE:
-   bolter [global options] command [command options] [arguments...]
+  bolter - view boltdb file in your terminal
 
 VERSION:
-   1.0.0
+  1.0.0
 
-AUTHOR(S):
-   Hasit Mistry <hasit@uw.edu>
+USAGE:
+  bolter [global options]
 
-COMMANDS:
 GLOBAL OPTIONS:
-   --file FILE, -f FILE		BoltDB file to view FILE
-   --bucket BUCKET, -b BUCKET	Bucket to view BUCKET
-   --help, -h			show help
-   --version, -v		print the version
+  --file FILE, -f FILE		boltdb FILE to view
+  --bucket BUCKET, -b BUCKET	boltdb BUCKET to view
+  --help, -h			show help
+  --version, -v			print the version
+
+AUTHOR:
+  Hasit Mistry <hasitnm@gmail.com>
 ```
