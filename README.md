@@ -4,13 +4,13 @@ View BoltDB file in your terminal
 
 ## Install
 
-```bash
+```
 $ go get github.com/hasit/bolter
 ```
 
 ## Usage
 
-```bash
+```
 $ bolter
 NAME:
    bolter - view boltdb file in your terminal
