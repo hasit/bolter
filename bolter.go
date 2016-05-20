@@ -15,21 +15,36 @@ func main() {
 	var bucket string
 	i := impl{}
 
+	cli.AppHelpTemplate = `NAME:
+  {{.Name}} - {{.Usage}}
+
+VERSION:
+  {{.Version}}
+
+USAGE:
+  {{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}
+
+GLOBAL OPTIONS:
+  {{range .VisibleFlags}}{{.}}
+  {{end}}
+AUTHOR:
+  {{range .Authors}}{{ . }}{{end}}
+`
 	app := cli.NewApp()
 	app.Name = "bolter"
 	app.Usage = "view boltdb file in your terminal"
 	app.Version = "1.0.0"
 	app.Author = "Hasit Mistry"
-	app.Email = "hasit@uw.edu"
+	app.Email = "hasitnm@gmail.com"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "file, f",
-			Usage:       "BoltDB file to view `FILE`",
+			Usage:       "boltdb `FILE` to view",
 			Destination: &file,
 		},
 		cli.StringFlag{
 			Name:        "bucket, b",
-			Usage:       "Bucket to view `BUCKET`",
+			Usage:       "boltdb `BUCKET` to view",
 			Destination: &bucket,
 		},
 	}
