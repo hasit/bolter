@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
@@ -94,9 +95,22 @@ func (i *impl) initDB(file string) {
 func (i *impl) listBucketItems(bucket string) {
 	items := []item{}
 	err := i.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
+		nbs := strings.Split(bucket, ".")
+		b := tx.Bucket([]byte(nbs[0]))
+		if b == nil {
+			return nil
+		}
+		for _, nb := range nbs[1:] {
+			b = b.Bucket([]byte(nb))
+			if b == nil {
+				return nil
+			}
+		}
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v == nil {
+				k = append(k, byte('*'))
+			}
 			items = append(items, item{Key: string(k), Value: string(v)})
 		}
 		return nil
