@@ -38,6 +38,38 @@ AUTHOR:
 
 ![List all items](assets/viewbucket.gif)
 
+#### Nested buckets
+
+You can easily list all items in a nested bucket:
+```
+$ bolter -f my.db
++-----------+
+|  BUCKETS  |
++-----------+
+|   root    |
++-----------+
+
+$ bolter -f my.db -b root
+Bucket: root
++---------+---------+
+|   KEY   |  VALUE  |
++---------+---------+
+| nested* |         |
++---------+---------+
+```
+
+***** means `nested` is a bucket.
+
+```
+$ bolter -f my.db -b root.nested
+Bucket: root.nested
++---------+---------+
+|   KEY   |  VALUE  |
++---------+---------+
+|  mykey  | myvalue |
++---------+---------+
+```
+
 ## Contribute
 
 Feel free to ask questions, post issues and open pull requests. My only requirement is that you run `gofmt` on your code before you send in a PR.

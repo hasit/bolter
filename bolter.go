@@ -108,6 +108,9 @@ func (i *impl) listBucketItems(bucket string) {
 		}
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v == nil {
+				k = append(k, byte('*'))
+			}
 			items = append(items, item{Key: string(k), Value: string(v)})
 		}
 		return nil
