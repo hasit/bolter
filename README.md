@@ -2,6 +2,8 @@
 
 View BoltDB file in your terminal
 
+![List all items](assets/viewbucket.gif)
+
 ## Install
 
 ```
@@ -32,15 +34,41 @@ AUTHOR:
 
 ### List all buckets
 
-![List all buckets](assets/listbuckets.gif)
+```
+$ bolter -f emails.db
++---------------------------+
+|          BUCKETS          |
++---------------------------+
+| john@doe.com              |
+| jane@roe.com              |
+| sample@example.com        |
+| test@test.com             |
++---------------------------+
+```
 
 ### List all items in bucket
 
-![List all items](assets/viewbucket.gif)
+```
+$ bolter -f emails.db -b john@doe.com
+Bucket: john@doe.com
++---------------+---------------------+
+|      KEY      |        VALUE        |
++---------------+---------------------+
+| emailLastSent |                     |
+| subLocation   |                     |
+| subTag        |                     |
+| userActive    | true                |
+| userCreatedOn | 2016-10-28 07:21:49 |
+| userEmail     | john@doe.com        |
+| userFirstName | John                |
+| userLastName  | Doe                 |
++---------------+---------------------+
+```
 
 #### Nested buckets
 
 You can easily list all items in a nested bucket:
+
 ```
 $ bolter -f my.db
 +-----------+
@@ -56,11 +84,9 @@ Bucket: root
 +---------+---------+
 | nested* |         |
 +---------+---------+
-```
 
-***** means `nested` is a bucket.
+* means the key (`nested` in this case) is a bucket.
 
-```
 $ bolter -f my.db -b root.nested
 Bucket: root.nested
 +---------+---------+
