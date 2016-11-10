@@ -13,23 +13,13 @@ $ go get -u github.com/hasit/bolter
 ## Usage
 
 ```
-NAME:
-  bolter - view boltdb file in your terminal
-
-VERSION:
-  1.0.0
-
-USAGE:
-  bolter [global options]
+$ bolter [global options]
 
 GLOBAL OPTIONS:
   --file FILE, -f FILE		boltdb FILE to view
   --bucket BUCKET, -b BUCKET	boltdb BUCKET to view
   --help, -h			show help
   --version, -v			print the version
-
-AUTHOR:
-  Hasit Mistry <hasitnm@gmail.com>
 ```
 
 ### List all buckets
@@ -65,7 +55,7 @@ Bucket: john@doe.com
 +---------------+---------------------+
 ```
 
-#### Nested buckets
+### Nested buckets
 
 You can easily list all items in a nested bucket:
 
@@ -85,7 +75,7 @@ Bucket: root
 | nested* |         |
 +---------+---------+
 
-* means the key (`nested` in this case) is a bucket.
+* means the key ('nested' in this case) is a bucket.
 
 $ bolter -f my.db -b root.nested
 Bucket: root.nested
