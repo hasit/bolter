@@ -95,6 +95,9 @@ func (i *impl) initDB(file string) {
 func (i *impl) listBucketItems(bucket string) {
 	items := []item{}
 	err := i.DB.View(func(tx *bolt.Tx) error {
+		if i := len(bucket) - 1; bucket[i:] == "." {
+			bucket = bucket[:i]
+		}
 		nbs := strings.Split(bucket, ".")
 		b := tx.Bucket([]byte(nbs[0]))
 		if b == nil {
