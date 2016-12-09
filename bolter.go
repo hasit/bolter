@@ -49,7 +49,7 @@ AUTHOR:
 			Destination: &bucket,
 		},
 		cli.BoolFlag{
-			Name:        "machine-friendly, m",
+			Name:        "machine, m",
 			Usage:       "key=value format",
 			Destination: &machineFriendly,
 		},

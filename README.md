@@ -16,10 +16,11 @@ $ go get -u github.com/hasit/bolter
 $ bolter [global options]
 
 GLOBAL OPTIONS:
-  --file FILE, -f FILE		boltdb FILE to view
-  --bucket BUCKET, -b BUCKET	boltdb BUCKET to view
-  --help, -h			show help
-  --version, -v			print the version
+  --file FILE, -f FILE        boltdb FILE to view
+  --bucket BUCKET, -b BUCKET  boltdb BUCKET to view
+  --machine, -m               key=value format
+  --help, -h                  show help
+  --version, -v               print the version
 ```
 
 ### List all buckets
