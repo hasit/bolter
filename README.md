@@ -86,6 +86,27 @@ Bucket: root.nested
 +---------+---------+
 ```
 
+### Machine friendly output
+
+```
+$ bolter -f emails.db -m
+john@doe.com
+jane@roe.com
+sample@example.com
+test@test.com
+
+$ bolter -f emails.db -b john@doe.com -m
+emailLastSent=
+subLocation=
+subTag=
+userActive=true
+userCreatedOn=2016-10-28 07:21:49
+userEmail=john@doe.com
+userFirstName=John
+userLastName=Doe
+nested-bucket*=
+```
+
 ## Contribute
 
 Feel free to ask questions, post issues and open pull requests. My only requirement is that you run `gofmt` on your code before you send in a PR.
