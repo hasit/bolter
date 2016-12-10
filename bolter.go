@@ -14,7 +14,7 @@ import (
 func main() {
 	var file string
 	var bucket string
-	i := impl{}
+	var machineFriendly bool
 
 	cli.AppHelpTemplate = `NAME:
   {{.Name}} - {{.Usage}}
@@ -48,30 +48,48 @@ AUTHOR:
 			Usage:       "boltdb `BUCKET` to view",
 			Destination: &bucket,
 		},
+		cli.BoolFlag{
+			Name:        "machine, m",
+			Usage:       "key=value format",
+			Destination: &machineFriendly,
+		},
 	}
 	app.Action = func(c *cli.Context) error {
-		if file != "" {
-			if _, err := os.Stat(file); os.IsNotExist(err) {
-				log.Fatal(err)
-				return err
-			}
-			i.initDB(file)
-			defer i.DB.Close()
-			if bucket != "" {
-				i.listBucketItems(bucket)
-			} else {
-				i.listBuckets()
-			}
-		} else {
+		if file == "" {
 			cli.ShowAppHelp(c)
+			return nil
+		}
+
+		var i impl
+		if machineFriendly {
+			i = impl{fmt: &machineFormatter{}}
+		} else {
+			i = impl{fmt: &tableFormatter{}}
+		}
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			log.Fatal(err)
+			return err
+		}
+		i.initDB(file)
+		defer i.DB.Close()
+		if bucket != "" {
+			i.listBucketItems(bucket)
+		} else {
+			i.listBuckets()
 		}
 		return nil
 	}
 	app.Run(os.Args)
 }
 
+type formatter interface {
+	DumpBuckets([]bucket)
+	DumpBucketItems(string, []item)
+}
+
 type impl struct {
-	DB *bolt.DB
+	DB  *bolt.DB
+	fmt formatter
 }
 
 type item struct {
@@ -121,14 +139,7 @@ func (i *impl) listBucketItems(bucket string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Bucket: %s\n", bucket)
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Key", "Value"})
-	for _, item := range items {
-		row := []string{item.Key, item.Value}
-		table.Append(row)
-	}
-	table.Render()
+	i.fmt.DumpBucketItems(bucket, items)
 }
 
 func (i *impl) listBuckets() {
@@ -142,6 +153,12 @@ func (i *impl) listBuckets() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	i.fmt.DumpBuckets(buckets)
+}
+
+type tableFormatter struct{}
+
+func (tf tableFormatter) DumpBuckets(buckets []bucket) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Buckets"})
 	for _, b := range buckets {
@@ -149,4 +166,29 @@ func (i *impl) listBuckets() {
 		table.Append(row)
 	}
 	table.Render()
+}
+
+func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
+	fmt.Printf("Bucket: %s\n", bucket)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Key", "Value"})
+	for _, item := range items {
+		row := []string{item.Key, item.Value}
+		table.Append(row)
+	}
+	table.Render()
+}
+
+type machineFormatter struct{}
+
+func (mf machineFormatter) DumpBuckets(buckets []bucket) {
+	for _, b := range buckets {
+		fmt.Println(b.Name)
+	}
+}
+
+func (mf machineFormatter) DumpBucketItems(_ string, items []item) {
+	for _, item := range items {
+		fmt.Printf("%s=%s\n", item.Key, item.Value)
+	}
 }
