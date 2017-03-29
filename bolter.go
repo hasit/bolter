@@ -14,7 +14,6 @@ import (
 func main() {
 	var file string
 	var bucket string
-	var machineFriendly bool
 
 	cli.AppHelpTemplate = `NAME:
   {{.Name}} - {{.Usage}}
@@ -48,11 +47,6 @@ AUTHOR:
 			Usage:       "boltdb `BUCKET` to view",
 			Destination: &bucket,
 		},
-		cli.BoolFlag{
-			Name:        "machine, m",
-			Usage:       "key=value format",
-			Destination: &machineFriendly,
-		},
 	}
 	app.Action = func(c *cli.Context) error {
 		if file == "" {
@@ -61,11 +55,7 @@ AUTHOR:
 		}
 
 		var i impl
-		if machineFriendly {
-			i = impl{fmt: &machineFormatter{}}
-		} else {
-			i = impl{fmt: &tableFormatter{}}
-		}
+		i = impl{fmt: &tableFormatter{}}
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			log.Fatal(err)
 			return err
@@ -204,16 +194,3 @@ func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
 	fmt.Println()
 }
 
-type machineFormatter struct{}
-
-func (mf machineFormatter) DumpBuckets(buckets []bucket) {
-	for _, b := range buckets {
-		fmt.Println(b.Name)
-	}
-}
-
-func (mf machineFormatter) DumpBucketItems(_ string, items []item) {
-	for _, item := range items {
-		fmt.Printf("%s=%s\n", item.Key, item.Value)
-	}
-}
