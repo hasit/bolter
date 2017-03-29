@@ -3,12 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
-	"os"
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
 	kval "github.com/kval-access-language/kval-boltdb"
 	"github.com/olekukonko/tablewriter"
+	"log"
+	"os"
+	"strings"
 )
 
 func main() {
@@ -71,23 +72,31 @@ AUTHOR:
 }
 
 func (i *impl) readInput() {
-	fmt.Fprint(os.Stdout, "DB Layout:\n\n")
 	i.listBuckets()
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Fprint(os.Stdout, "\nEnter bucket to explore (q to quit, m to print):\n\n")
 	for scanner.Scan() {
 		bucket := scanner.Text()
 		fmt.Fprintln(os.Stdout, "")
-		switch(bucket) {
+		switch bucket {
 		case "q":
 			fallthrough
 		case "quit":
 			return
+		case " ":
+			// TODO: Change KVAL to get first record...
+			if !strings.Contains(i.loc, "GET") || !strings.Contains(i.loc, ">>") {
+				fmt.Println("Going back...")
+				i.loc = ""
+				i.listBuckets()
+			} else {
+				i.listBucketItems(bucket, true)
+			}
 		case "":
 			i.listBuckets()
 		default:
-			i.listBucketItems(bucket)
+			i.listBucketItems(bucket, false)
 		}
+		bucket = ""
 	}
 }
 
@@ -100,7 +109,7 @@ type impl struct {
 	KV  kval.Kvalboltdb
 	DB  *bolt.DB
 	fmt formatter
-	loc string		// where we are in the structure
+	loc string // where we are in the structure
 }
 
 type item struct {
@@ -122,7 +131,17 @@ func (i *impl) initDB(file string) {
 	}
 }
 
-func (i *impl) updateLoc(bucket string) string {
+func (i *impl) updateLoc(bucket string, goBack bool) string {
+
+	// handle goback
+	if goBack {
+		s := strings.Split(i.loc, ">>")
+		i.loc = strings.Join(s[:len(s)-1], " ")
+		fmt.Println(i.loc)
+		return i.loc
+	}
+
+	// handle loc on merit...
 	if i.loc == "" {
 		i.loc = "GET " + bucket
 	} else {
@@ -131,10 +150,10 @@ func (i *impl) updateLoc(bucket string) string {
 	return i.loc
 }
 
-func (i *impl) listBucketItems(bucket string) {
+func (i *impl) listBucketItems(bucket string, goBack bool) {
 	items := []item{}
-	getItems := i.updateLoc(bucket)
-	fmt.Fprintf(os.Stderr, "Query: " + i.loc + "\n\n")
+	getItems := i.updateLoc(bucket, goBack)
+	fmt.Fprintf(os.Stderr, "Query: "+i.loc+"\n\n")
 	res, err := kval.Query(i.KV, getItems)
 	if err != nil {
 		if err.Error() != "Cannot GOTO bucket, bucket not found" {
@@ -151,8 +170,8 @@ func (i *impl) listBucketItems(bucket string) {
 		}
 		items = append(items, item{Key: string(k), Value: string(v)})
 	}
-
 	i.fmt.DumpBucketItems(bucket, items)
+	fmt.Fprint(os.Stdout, "Enter bucket to explore (q to quit, SPACE to go back, ENTER to reset):\n\n")
 }
 
 func (i *impl) listBuckets() {
@@ -166,7 +185,9 @@ func (i *impl) listBuckets() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Fprint(os.Stdout, "DB Layout:\n\n")
 	i.fmt.DumpBuckets(buckets)
+	fmt.Fprint(os.Stdout, "Enter bucket to explore (q to quit, SPACE to go back, ENTER to reset):\n\n")
 }
 
 type tableFormatter struct{}
@@ -193,4 +214,3 @@ func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
 	table.Render()
 	fmt.Println()
 }
-
