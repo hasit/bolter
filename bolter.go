@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -71,14 +72,33 @@ AUTHOR:
 		}
 		i.initDB(file)
 		defer i.DB.Close()
-		if bucket != "" {
-			i.listBucketItems(bucket)
-		} else {
-			i.listBuckets()
-		}
+
+		i.readInput()
+
 		return nil
 	}
 	app.Run(os.Args)
+}
+
+func (i *impl) readInput() {
+	fmt.Fprint(os.Stdout, "DB Layout:\n\n")
+	i.listBuckets()
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Fprint(os.Stdout, "\nEnter bucket to explore (q to quit, m to print):\n\n")
+	for scanner.Scan() {
+		bucket := scanner.Text()
+		fmt.Fprintln(os.Stdout, "")
+		switch(bucket) {
+		case "q":
+			fallthrough
+		case "quit":
+			return
+		case "":
+			i.listBuckets()
+		default:
+			i.listBucketItems(bucket)
+		}
+	}
 }
 
 type formatter interface {
@@ -90,6 +110,7 @@ type impl struct {
 	KV  kval.Kvalboltdb
 	DB  *bolt.DB
 	fmt formatter
+	loc string		// where we are in the structure
 }
 
 type item struct {
@@ -111,12 +132,27 @@ func (i *impl) initDB(file string) {
 	}
 }
 
+func (i *impl) updateLoc(bucket string) string {
+	if i.loc == "" {
+		i.loc = "GET " + bucket
+	} else {
+		i.loc = i.loc + " >> " + bucket
+	}
+	return i.loc
+}
+
 func (i *impl) listBucketItems(bucket string) {
 	items := []item{}
-	getItems := "GET " + bucket
+	getItems := i.updateLoc(bucket)
+	fmt.Fprintf(os.Stderr, "Query: " + i.loc + "\n\n")
 	res, err := kval.Query(i.KV, getItems)
 	if err != nil {
-		log.Fatal(err)
+		if err.Error() != "Cannot GOTO bucket, bucket not found" {
+			log.Fatal(err)
+		} else {
+			fmt.Fprintln(os.Stderr, "Bucket not found")
+			fmt.Println(getItems)
+		}
 	}
 	for k, v := range res.Result {
 		if v == kval.Nestedbucket {
@@ -153,6 +189,7 @@ func (tf tableFormatter) DumpBuckets(buckets []bucket) {
 		table.Append(row)
 	}
 	table.Render()
+	fmt.Println()
 }
 
 func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
@@ -164,6 +201,7 @@ func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
 		table.Append(row)
 	}
 	table.Render()
+	fmt.Println()
 }
 
 type machineFormatter struct{}
