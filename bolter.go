@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	//"strings"
-
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
 	kval "github.com/kval-access-language/kval-boltdb"
