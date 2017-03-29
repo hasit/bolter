@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
+	//"strings"
 
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
+	kval "github.com/kval-access-language/kval-boltdb"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -88,6 +89,7 @@ type formatter interface {
 }
 
 type impl struct {
+	KV  kval.Kvalboltdb
 	DB  *bolt.DB
 	fmt formatter
 }
@@ -103,8 +105,9 @@ type bucket struct {
 
 func (i *impl) initDB(file string) {
 	var err error
-	// Read-only permission
-	i.DB, err = bolt.Open(file, 0400, nil)
+	// Read-only permission, should be equiv. bolt.Open(file, 0400, nil)
+	i.KV, err = kval.Connect(file)
+	i.DB = kval.GetBolt(i.KV)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -112,33 +115,19 @@ func (i *impl) initDB(file string) {
 
 func (i *impl) listBucketItems(bucket string) {
 	items := []item{}
-	err := i.DB.View(func(tx *bolt.Tx) error {
-		if i := len(bucket) - 1; bucket[i:] == "." {
-			bucket = bucket[:i]
-		}
-		nbs := strings.Split(bucket, ".")
-		b := tx.Bucket([]byte(nbs[0]))
-		if b == nil {
-			return nil
-		}
-		for _, nb := range nbs[1:] {
-			b = b.Bucket([]byte(nb))
-			if b == nil {
-				return nil
-			}
-		}
-		c := b.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			if v == nil {
-				k = append(k, byte('*'))
-			}
-			items = append(items, item{Key: string(k), Value: string(v)})
-		}
-		return nil
-	})
+	getItems := "GET " + bucket
+	res, err := kval.Query(i.KV, getItems)
 	if err != nil {
 		log.Fatal(err)
 	}
+	for k, v := range res.Result {
+		if v == kval.Nestedbucket {
+			k = k + "*"
+			v = ""
+		}
+		items = append(items, item{Key: string(k), Value: string(v)})
+	}
+
 	i.fmt.DumpBucketItems(bucket, items)
 }
 
