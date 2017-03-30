@@ -100,12 +100,13 @@ type formatter interface {
 }
 
 type impl struct {
-	KV   kval.Kvalboltdb
-	DB   *bolt.DB
-	fmt  formatter
-	loc  string // where we are in the structure
-	cur  string
-	root bool // are we on root
+	KV     kval.Kvalboltdb
+	DB     *bolt.DB
+	fmt    formatter
+	bucket string
+	loc    string // where we are in the structure
+	cur    string
+	root   bool // are we on root
 }
 
 type item struct {
@@ -139,16 +140,18 @@ func (i *impl) updateLoc(bucket string, goBack bool) string {
 	// handle goback
 	if goBack {
 		s := strings.Split(i.loc, ">>")
-		i.loc = strings.Join(s[:len(s)-1], " ")
-		fmt.Println(i.loc)
+		i.loc = strings.Join(s[:len(s)-1], ">>")
+		i.bucket = strings.Trim(s[len(s)-2], " ")
 		return i.loc
 	}
 
 	// handle location on merit...
 	if i.loc == "" {
 		i.loc = bucket
+		i.bucket = bucket
 	} else {
 		i.loc = i.loc + " >> " + bucket
+		i.bucket = bucket
 	}
 	return i.loc
 }
@@ -184,7 +187,7 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 			}
 			items = append(items, item{Key: string(k), Value: string(v)})
 		}
-		i.fmt.DumpBucketItems(bucket, items)
+		i.fmt.DumpBucketItems(i.bucket, items)
 		i.root = false
 		i.cur = getItems
 		fmt.Fprint(os.Stdout, instructionLine)
