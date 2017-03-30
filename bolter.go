@@ -11,7 +11,9 @@ import (
 	"strings"
 )
 
-var instructionLine = "> Enter bucket to explore (CTRL-X to quit, CTRL-B to go back, ENTER to go back to ROOT Bucket):"
+// Terminal lines... 
+const instructionLine = "> Enter bucket to explore (CTRL-X to quit, CTRL-B to go back, ENTER to go back to ROOT Bucket):"
+const goingBack = "> Going back..."
 
 func main() {
 	var file string
@@ -80,7 +82,7 @@ func (i *impl) readInput() {
 			return
 		case "\x02":
 			if !strings.Contains(i.loc, "") || !strings.Contains(i.loc, ">>") {
-				fmt.Fprintln(os.Stdout, "> Going back...\n")
+				fmt.Fprintf(os.Stdout, "%s\n", goingBack)
 				i.loc = ""
 				i.listBuckets()
 			} else {
