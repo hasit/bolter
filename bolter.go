@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var instructionLine = "> Enter bucket to explore (CTRL-Q to quit, CTRL-B to go back, ENTER to reset):\n\n"
+var instructionLine = "> Enter bucket to explore (CTRL-X to quit, CTRL-B to go back, ENTER to reset):\n\n"
 
 func main() {
 	var file string
@@ -76,7 +76,7 @@ func (i *impl) readInput() {
 		bucket := scanner.Text()
 		fmt.Fprintln(os.Stdout, "")
 		switch bucket {
-		case "\x11":
+		case "\x18":
 			return
 		case "\x02":
 			// TODO: Change KVAL to get first record...
