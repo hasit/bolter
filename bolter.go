@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var instructionLine = "Enter bucket to explore (CTRL-Q to quit, CTRL-B to go back, ENTER to reset):\n\n"
+var instructionLine = "> Enter bucket to explore (CTRL-Q to quit, CTRL-B to go back, ENTER to reset):\n\n"
 
 func main() {
 	var file string
@@ -84,8 +84,8 @@ func (i *impl) readInput() {
 			return
 		case "\x02":
 			// TODO: Change KVAL to get first record...
-			if !strings.Contains(i.loc, "GET") || !strings.Contains(i.loc, ">>") {
-				fmt.Println("Going back...")
+			if !strings.Contains(i.loc, "") || !strings.Contains(i.loc, ">>") {
+				fmt.Println("> Going back...")
 				i.loc = ""
 				i.listBuckets()
 			} else {
@@ -106,10 +106,12 @@ type formatter interface {
 }
 
 type impl struct {
-	KV  kval.Kvalboltdb
-	DB  *bolt.DB
-	fmt formatter
-	loc string // where we are in the structure
+	KV   kval.Kvalboltdb
+	DB   *bolt.DB
+	fmt  formatter
+	loc  string // where we are in the structure
+	cur  string
+	root bool // are we on root
 }
 
 type item struct {
@@ -133,6 +135,13 @@ func (i *impl) initDB(file string) {
 
 func (i *impl) updateLoc(bucket string, goBack bool) string {
 
+	// we've probably an invalid value and want to display
+	// ourselves again...
+	if bucket == i.cur {
+		i.loc = bucket
+		return i.loc
+	}
+
 	// handle goback
 	if goBack {
 		s := strings.Split(i.loc, ">>")
@@ -141,9 +150,9 @@ func (i *impl) updateLoc(bucket string, goBack bool) string {
 		return i.loc
 	}
 
-	// handle loc on merit...
+	// handle location on merit...
 	if i.loc == "" {
-		i.loc = "GET " + bucket
+		i.loc = bucket
 	} else {
 		i.loc = i.loc + " >> " + bucket
 	}
@@ -153,28 +162,46 @@ func (i *impl) updateLoc(bucket string, goBack bool) string {
 func (i *impl) listBucketItems(bucket string, goBack bool) {
 	items := []item{}
 	getItems := i.updateLoc(bucket, goBack)
-	fmt.Fprintf(os.Stderr, "Query: "+i.loc+"\n\n")
-	res, err := kval.Query(i.KV, getItems)
-	if err != nil {
-		if err.Error() != "Cannot GOTO bucket, bucket not found" {
-			log.Fatal(err)
-		} else {
-			fmt.Fprintln(os.Stderr, "Bucket not found")
-			fmt.Println(getItems)
+	fmt.Fprintf(os.Stderr, "Query: "+getItems+"\n\n")
+	if getItems != "" {
+		res, err := kval.Query(i.KV, "GET "+getItems)
+		if err != nil {
+			if err.Error() != "Cannot GOTO bucket, bucket not found" {
+				log.Fatal(err)
+			} else {
+				fmt.Fprintf(os.Stderr, "> Bucket not found\n")
+				if i.root == true {
+					i.listBuckets()
+					return
+				}
+				i.listBucketItems(i.loc, true)
+			}
 		}
-	}
-	for k, v := range res.Result {
-		if v == kval.Nestedbucket {
-			k = k + "*"
-			v = ""
+
+		if len(res.Result) == 0 {
+			fmt.Fprintf(os.Stderr, "Invalid request.\n\n")
+			i.listBucketItems(i.cur, false)
+			return
 		}
-		items = append(items, item{Key: string(k), Value: string(v)})
+
+		for k, v := range res.Result {
+			if v == kval.Nestedbucket {
+				k = k + "*"
+				v = ""
+			}
+			items = append(items, item{Key: string(k), Value: string(v)})
+		}
+		i.fmt.DumpBucketItems(bucket, items)
+		i.root = false
+		i.cur = getItems
+		fmt.Fprint(os.Stdout, instructionLine)
 	}
-	i.fmt.DumpBucketItems(bucket, items)
-	fmt.Fprint(os.Stdout, instructionLine)
 }
 
 func (i *impl) listBuckets() {
+	i.root = true
+	i.loc = ""
+
 	buckets := []bucket{}
 
 	res, err := kval.Query(i.KV, "GET _")
@@ -182,7 +209,7 @@ func (i *impl) listBuckets() {
 		log.Fatal(err)
 	}
 	for k, _ := range res.Result {
-		buckets = append(buckets, bucket{Name: string(k) + "*"})		
+		buckets = append(buckets, bucket{Name: string(k) + "*"})
 	}
 
 	fmt.Fprint(os.Stdout, "DB Layout:\n\n")
