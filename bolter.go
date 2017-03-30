@@ -115,12 +115,12 @@ type impl struct {
 }
 
 type item struct {
-	Key   string `json:"Key"`
-	Value string `json:"Value"`
+	Key   string
+	Value string
 }
 
 type bucket struct {
-	Name string `json:"Name"`
+	Name string
 }
 
 func (i *impl) initDB(file string) {
@@ -177,7 +177,6 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 				i.listBucketItems(i.loc, true)
 			}
 		}
-
 		if len(res.Result) == 0 {
 			fmt.Fprintf(os.Stderr, "Invalid request.\n\n")
 			i.listBucketItems(i.cur, false)
