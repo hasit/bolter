@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/boltdb/bolt"
 	"github.com/codegangsta/cli"
 	kval "github.com/kval-access-language/kval-boltdb"
 	"github.com/olekukonko/tablewriter"
@@ -35,7 +34,7 @@ AUTHOR:
 	app := cli.NewApp()
 	app.Name = "kval-bolter"
 	app.Usage = "view boltdb file interactively in your terminal"
-	app.Version = "2.0.0"
+	app.Version = "2.0.0-kval"
 	app.Author = "Originally by Hasit Mistry. Interactive mode: Ross Spencer"
 	//app.Email = ""
 	app.Flags = []cli.Flag{
@@ -58,7 +57,7 @@ AUTHOR:
 			return err
 		}
 		i.initDB(file)
-		defer i.DB.Close()
+		defer kval.Disconnect(i.kb)
 
 		i.readInput()
 
@@ -100,8 +99,7 @@ type formatter interface {
 }
 
 type impl struct {
-	KV     kval.Kvalboltdb
-	DB     *bolt.DB
+	kb     kval.Kvalboltdb
 	fmt    formatter
 	bucket string
 	loc    string // where we are in the structure
@@ -120,9 +118,8 @@ type bucket struct {
 
 func (i *impl) initDB(file string) {
 	var err error
-	// Read-only permission, should be equiv. bolt.Open(file, 0400, nil)
-	i.KV, err = kval.Connect(file)
-	i.DB = kval.GetBolt(i.KV)
+	// Connect to KVAL
+	i.kb, err = kval.Connect(file)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,7 +158,7 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 	getItems := i.updateLoc(bucket, goBack)
 	fmt.Fprintf(os.Stderr, "Query: "+getItems+"\n\n")
 	if getItems != "" {
-		res, err := kval.Query(i.KV, "GET "+getItems)
+		res, err := kval.Query(i.kb, "GET "+getItems)
 		if err != nil {
 			if err.Error() != "Cannot GOTO bucket, bucket not found" {
 				log.Fatal(err)
@@ -200,7 +197,7 @@ func (i *impl) listBuckets() {
 
 	buckets := []bucket{}
 
-	res, err := kval.Query(i.KV, "GET _")
+	res, err := kval.Query(i.kb, "GET _")
 	if err != nil {
 		log.Fatal(err)
 	}
