@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+var instructionLine = "Enter bucket to explore (CTRL-Q to quit, CTRL-B to go back, ENTER to reset):\n\n"
+
 func main() {
 	var file string
 	var bucket string
@@ -78,11 +80,9 @@ func (i *impl) readInput() {
 		bucket := scanner.Text()
 		fmt.Fprintln(os.Stdout, "")
 		switch bucket {
-		case "q":
-			fallthrough
-		case "quit":
+		case "\x11":
 			return
-		case " ":
+		case "\x02":
 			// TODO: Change KVAL to get first record...
 			if !strings.Contains(i.loc, "GET") || !strings.Contains(i.loc, ">>") {
 				fmt.Println("Going back...")
@@ -171,23 +171,23 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 		items = append(items, item{Key: string(k), Value: string(v)})
 	}
 	i.fmt.DumpBucketItems(bucket, items)
-	fmt.Fprint(os.Stdout, "Enter bucket to explore (q to quit, SPACE to go back, ENTER to reset):\n\n")
+	fmt.Fprint(os.Stdout, instructionLine)
 }
 
 func (i *impl) listBuckets() {
 	buckets := []bucket{}
-	err := i.DB.View(func(tx *bolt.Tx) error {
-		return tx.ForEach(func(bucketname []byte, _ *bolt.Bucket) error {
-			buckets = append(buckets, bucket{Name: string(bucketname)})
-			return nil
-		})
-	})
+
+	res, err := kval.Query(i.KV, "GET _")
 	if err != nil {
 		log.Fatal(err)
 	}
+	for k, _ := range res.Result {
+		buckets = append(buckets, bucket{Name: string(k) + "*"})		
+	}
+
 	fmt.Fprint(os.Stdout, "DB Layout:\n\n")
 	i.fmt.DumpBuckets(buckets)
-	fmt.Fprint(os.Stdout, "Enter bucket to explore (q to quit, SPACE to go back, ENTER to reset):\n\n")
+	fmt.Fprint(os.Stdout, instructionLine)
 }
 
 type tableFormatter struct{}
