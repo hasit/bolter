@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var instructionLine = "> Enter bucket to explore (CTRL-X to quit, CTRL-B to go back, ENTER to reset):\n\n"
+var instructionLine = "> Enter bucket to explore (CTRL-X to quit, CTRL-B to go back, ENTER to go back to ROOT Bucket):"
 
 func main() {
 	var file string
@@ -36,10 +36,10 @@ COPYRIGHT:
 	app := cli.NewApp()
 	app.Name = "bolter"
 	app.Usage = "view boltdb file interactively in your terminal"
-	app.Version = "2.0.0-kval-fork"
-	app.Author = "Originally by Hasit Mistry. Interactive mode: Ross Spencer"
+	app.Version = "2.0.0"
+	app.Author = "Hasit Mistry"
+	app.Email = "hasitnm@gmail.com"
 	app.Copyright = "(c) 2016 Hasit Mistry"
-	//app.Email = ""
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "file, f",
@@ -74,14 +74,13 @@ func (i *impl) readInput() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		bucket := scanner.Text()
-		fmt.Fprintln(os.Stdout, "")
+		fmt.Fprint(os.Stdout, "")
 		switch bucket {
 		case "\x18":
 			return
 		case "\x02":
-			// TODO: Change KVAL to get first record...
 			if !strings.Contains(i.loc, "") || !strings.Contains(i.loc, ">>") {
-				fmt.Println("> Going back...")
+				fmt.Fprintln(os.Stdout, "> Going back...\n")
 				i.loc = ""
 				i.listBuckets()
 			} else {
@@ -105,9 +104,9 @@ type impl struct {
 	kb     kval.Kvalboltdb
 	fmt    formatter
 	bucket string
-	loc    string // where we are in the structure
-	cur    string
-	root   bool // are we on root
+	loc    string 	// navigation, what is our requested location in the store?
+	cache  string	// navigation, cache our last location to move back to
+	root   bool 	// navigation, are we @ root bucket?
 }
 
 type item struct {
@@ -121,7 +120,8 @@ type bucket struct {
 
 func (i *impl) initDB(file string) {
 	var err error
-	// Connect to KVAL
+	// Connect to KVAL using KVAL default mechanism
+	// Can also use regular open plus perms, and kval.Attach()
 	i.kb, err = kval.Connect(file)
 	if err != nil {
 		log.Fatal(err)
@@ -132,7 +132,7 @@ func (i *impl) updateLoc(bucket string, goBack bool) string {
 
 	// we've probably an invalid value and want to display
 	// ourselves again...
-	if bucket == i.cur {
+	if bucket == i.cache {
 		i.loc = bucket
 		return i.loc
 	}
@@ -158,15 +158,15 @@ func (i *impl) updateLoc(bucket string, goBack bool) string {
 
 func (i *impl) listBucketItems(bucket string, goBack bool) {
 	items := []item{}
-	getItems := i.updateLoc(bucket, goBack)
-	fmt.Fprintf(os.Stderr, "Query: "+getItems+"\n\n")
-	if getItems != "" {
-		res, err := kval.Query(i.kb, "GET "+getItems)
+	getQuery := i.updateLoc(bucket, goBack)
+	if getQuery != "" {
+		fmt.Fprintf(os.Stdout, "Query: "+getQuery+"\n\n")
+		res, err := kval.Query(i.kb, "GET "+getQuery)
 		if err != nil {
 			if err.Error() != "Cannot GOTO bucket, bucket not found" {
 				log.Fatal(err)
 			} else {
-				fmt.Fprintf(os.Stderr, "> Bucket not found\n")
+				fmt.Fprintf(os.Stdout, "> Bucket not found\n")
 				if i.root == true {
 					i.listBuckets()
 					return
@@ -175,8 +175,8 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 			}
 		}
 		if len(res.Result) == 0 {
-			fmt.Fprintf(os.Stderr, "Invalid request.\n\n")
-			i.listBucketItems(i.cur, false)
+			fmt.Fprintf(os.Stdout, "Invalid request.\n\n")
+			i.listBucketItems(i.cache, false)
 			return
 		}
 
@@ -187,10 +187,11 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 			}
 			items = append(items, item{Key: string(k), Value: string(v)})
 		}
+		fmt.Fprintf(os.Stdout, "Bucket: %s\n", bucket)
 		i.fmt.DumpBucketItems(i.bucket, items)
-		i.root = false
-		i.cur = getItems
-		fmt.Fprint(os.Stdout, instructionLine)
+		i.root = false			// success this far means we're not at ROOT
+		i.cache = getQuery	// so we can also set the query cache for paging
+		outputInstructionline()
 	}
 }
 
@@ -200,7 +201,7 @@ func (i *impl) listBuckets() {
 
 	buckets := []bucket{}
 
-	res, err := kval.Query(i.kb, "GET _")
+	res, err := kval.Query(i.kb, "GET _")		// KVAL: "GET _" will return ROOT
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -210,7 +211,11 @@ func (i *impl) listBuckets() {
 
 	fmt.Fprint(os.Stdout, "DB Layout:\n\n")
 	i.fmt.DumpBuckets(buckets)
-	fmt.Fprint(os.Stdout, instructionLine)
+	outputInstructionline()
+}
+
+func outputInstructionline() {
+	fmt.Fprintf(os.Stdout, "\n%s\n\n", instructionLine)
 }
 
 type tableFormatter struct{}
@@ -223,11 +228,9 @@ func (tf tableFormatter) DumpBuckets(buckets []bucket) {
 		table.Append(row)
 	}
 	table.Render()
-	fmt.Println()
 }
 
 func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
-	fmt.Printf("Bucket: %s\n", bucket)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Key", "Value"})
 	for _, item := range items {
@@ -235,5 +238,4 @@ func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
 		table.Append(row)
 	}
 	table.Render()
-	fmt.Println()
 }
