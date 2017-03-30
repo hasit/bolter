@@ -74,7 +74,7 @@ func (i *impl) readInput() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		bucket := scanner.Text()
-		fmt.Fprint(os.Stdout, "")
+		fmt.Fprintln(os.Stdout, "")
 		switch bucket {
 		case "\x18":
 			return
@@ -104,9 +104,9 @@ type impl struct {
 	kb     kval.Kvalboltdb
 	fmt    formatter
 	bucket string
-	loc    string 	// navigation, what is our requested location in the store?
-	cache  string	// navigation, cache our last location to move back to
-	root   bool 	// navigation, are we @ root bucket?
+	loc    string // navigation, what is our requested location in the store?
+	cache  string // navigation, cache our last location to move back to
+	root   bool   // navigation, are we @ root bucket?
 }
 
 type item struct {
@@ -189,8 +189,8 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 		}
 		fmt.Fprintf(os.Stdout, "Bucket: %s\n", bucket)
 		i.fmt.DumpBucketItems(i.bucket, items)
-		i.root = false			// success this far means we're not at ROOT
-		i.cache = getQuery	// so we can also set the query cache for paging
+		i.root = false     // success this far means we're not at ROOT
+		i.cache = getQuery // so we can also set the query cache for paging
 		outputInstructionline()
 	}
 }
@@ -201,11 +201,11 @@ func (i *impl) listBuckets() {
 
 	buckets := []bucket{}
 
-	res, err := kval.Query(i.kb, "GET _")		// KVAL: "GET _" will return ROOT
+	res, err := kval.Query(i.kb, "GET _") // KVAL: "GET _" will return ROOT
 	if err != nil {
 		log.Fatal(err)
 	}
-	for k, _ := range res.Result {
+	for k := range res.Result {
 		buckets = append(buckets, bucket{Name: string(k) + "*"})
 	}
 
