@@ -16,7 +16,6 @@ var instructionLine = "> Enter bucket to explore (CTRL-Q to quit, CTRL-B to go b
 
 func main() {
 	var file string
-	var bucket string
 
 	cli.AppHelpTemplate = `NAME:
   {{.Name}} - {{.Usage}}
@@ -34,21 +33,16 @@ AUTHOR:
   {{range .Authors}}{{ . }}{{end}}
 `
 	app := cli.NewApp()
-	app.Name = "bolter"
-	app.Usage = "view boltdb file in your terminal"
-	app.Version = "1.0.0"
-	app.Author = "Hasit Mistry"
-	app.Email = "hasitnm@gmail.com"
+	app.Name = "kval-bolter"
+	app.Usage = "view boltdb file interactively in your terminal"
+	app.Version = "2.0.0"
+	app.Author = "Originally by Hasit Mistry. Interactive mode: Ross Spencer"
+	//app.Email = ""
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "file, f",
 			Usage:       "boltdb `FILE` to view",
 			Destination: &file,
-		},
-		cli.StringFlag{
-			Name:        "bucket, b",
-			Usage:       "boltdb `BUCKET` to view",
-			Destination: &bucket,
 		},
 	}
 	app.Action = func(c *cli.Context) error {
