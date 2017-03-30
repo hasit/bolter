@@ -30,12 +30,15 @@ GLOBAL OPTIONS:
   {{end}}
 AUTHOR:
   {{range .Authors}}{{ . }}{{end}}
+COPYRIGHT:
+  {{.Copyright}}
 `
 	app := cli.NewApp()
-	app.Name = "kval-bolter"
+	app.Name = "bolter"
 	app.Usage = "view boltdb file interactively in your terminal"
-	app.Version = "2.0.0-kval"
+	app.Version = "2.0.0-kval-fork"
 	app.Author = "Originally by Hasit Mistry. Interactive mode: Ross Spencer"
+	app.Copyright = "(c) 2016 Hasit Mistry"
 	//app.Email = ""
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
