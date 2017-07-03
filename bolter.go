@@ -3,15 +3,16 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/codegangsta/cli"
-	kval "github.com/kval-access-language/kval-boltdb"
-	"github.com/olekukonko/tablewriter"
 	"log"
 	"os"
 	"strings"
+
+	kval "github.com/kval-access-language/kval-boltdb"
+	"github.com/olekukonko/tablewriter"
+	"github.com/urfave/cli"
 )
 
-// Terminal lines... 
+// Terminal lines...
 const instructionLine = "> Enter bucket to explore (CTRL-X to quit, CTRL-B to go back, ENTER to go back to ROOT Bucket):"
 const goingBack = "> Going back..."
 
