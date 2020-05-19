@@ -18,6 +18,7 @@ const goingBack = "> Going back..."
 
 func main() {
 	var file string
+	var noValues bool
 
 	cli.AppHelpTemplate = `NAME:
   {{.Name}} - {{.Usage}}
@@ -53,6 +54,11 @@ COPYRIGHT:
 			Usage:       "boltdb `FILE` to view",
 			Destination: &file,
 		},
+		&cli.BoolFlag{
+			Name:        "no-values",
+			Usage:       "use if values are huge and/or not printable",
+			Destination: &noValues,
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		if file == "" {
@@ -61,7 +67,9 @@ COPYRIGHT:
 		}
 
 		var i impl
-		i = impl{fmt: &tableFormatter{}}
+		i = impl{fmt: &tableFormatter{
+			noValues: noValues,
+		}}
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			log.Fatal(err)
 			return err
@@ -225,7 +233,9 @@ func outputInstructionline() {
 	fmt.Fprintf(os.Stdout, "\n%s\n\n", instructionLine)
 }
 
-type tableFormatter struct{}
+type tableFormatter struct {
+	noValues bool
+}
 
 func (tf tableFormatter) DumpBuckets(buckets []bucket) {
 	table := tablewriter.NewWriter(os.Stdout)
@@ -241,7 +251,12 @@ func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Key", "Value"})
 	for _, item := range items {
-		row := []string{item.Key, item.Value}
+		var row []string
+		if tf.noValues {
+			row = []string{item.Key, ""}
+		} else {
+			row = []string{item.Key, item.Value}
+		}
 		table.Append(row)
 	}
 	table.Render()
