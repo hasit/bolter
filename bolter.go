@@ -3,12 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
 
 	kval "github.com/kval-access-language/kval-boltdb"
-	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli"
 )
 
@@ -19,6 +19,7 @@ const goingBack = "> Going back..."
 func main() {
 	var file string
 	var noValues bool
+	var useMore bool
 
 	cli.AppHelpTemplate = `NAME:
   {{.Name}} - {{.Usage}}
@@ -59,6 +60,11 @@ COPYRIGHT:
 			Usage:       "use if values are huge and/or not printable",
 			Destination: &noValues,
 		},
+		&cli.BoolFlag{
+			Name:        "more",
+			Usage:       "use `more` to print all listings. Should be available in path",
+			Destination: &useMore,
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		if file == "" {
@@ -66,10 +72,17 @@ COPYRIGHT:
 			return nil
 		}
 
-		var i impl
-		i = impl{fmt: &tableFormatter{
+		var formatter formatter = &tableFormatter{
 			noValues: noValues,
-		}}
+		}
+		if useMore {
+			formatter = &moreWrapFormatter{
+				formatter: formatter,
+			}
+		}
+
+		var i impl
+		i = impl{fmt: formatter}
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			log.Fatal(err)
 			return err
@@ -111,8 +124,8 @@ func (i *impl) readInput() {
 }
 
 type formatter interface {
-	DumpBuckets([]bucket)
-	DumpBucketItems(string, []item)
+	DumpBuckets(io.Writer, []bucket)
+	DumpBucketItems(io.Writer, string, []item)
 }
 
 type impl struct {
@@ -203,7 +216,7 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 			items = append(items, item{Key: string(k), Value: string(v)})
 		}
 		fmt.Fprintf(os.Stdout, "Bucket: %s\n", bucket)
-		i.fmt.DumpBucketItems(i.bucket, items)
+		i.fmt.DumpBucketItems(os.Stdout, i.bucket, items)
 		i.root = false     // success this far means we're not at ROOT
 		i.cache = getQuery // so we can also set the query cache for paging
 		outputInstructionline()
@@ -225,39 +238,10 @@ func (i *impl) listBuckets() {
 	}
 
 	fmt.Fprint(os.Stdout, "DB Layout:\n\n")
-	i.fmt.DumpBuckets(buckets)
+	i.fmt.DumpBuckets(os.Stdout, buckets)
 	outputInstructionline()
 }
 
 func outputInstructionline() {
 	fmt.Fprintf(os.Stdout, "\n%s\n\n", instructionLine)
-}
-
-type tableFormatter struct {
-	noValues bool
-}
-
-func (tf tableFormatter) DumpBuckets(buckets []bucket) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Buckets"})
-	for _, b := range buckets {
-		row := []string{b.Name}
-		table.Append(row)
-	}
-	table.Render()
-}
-
-func (tf tableFormatter) DumpBucketItems(bucket string, items []item) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Key", "Value"})
-	for _, item := range items {
-		var row []string
-		if tf.noValues {
-			row = []string{item.Key, ""}
-		} else {
-			row = []string{item.Key, item.Value}
-		}
-		table.Append(row)
-	}
-	table.Render()
 }
