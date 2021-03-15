@@ -35,20 +35,24 @@ AUTHOR:
 	app.Name = "bolter"
 	app.Usage = "view boltdb file in your terminal"
 	app.Version = "1.0.0"
-	app.Author = "Hasit Mistry"
-	app.Email = "hasitnm@gmail.com"
+	app.Authors = []*cli.Author{
+		&cli.Author{
+			Name:  "Hasit Mistry",
+			Email: "hasitnm@gmail.com",
+		},
+	}
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:        "file, f",
 			Usage:       "boltdb `FILE` to view",
 			Destination: &file,
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:        "bucket, b",
 			Usage:       "boltdb `BUCKET` to view",
 			Destination: &bucket,
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:        "machine, m",
 			Usage:       "key=value format",
 			Destination: &machineFriendly,
