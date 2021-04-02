@@ -10,4 +10,5 @@ require (
 	github.com/olekukonko/tablewriter v0.0.2
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/urfave/cli v1.22.1
+	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect
 )
