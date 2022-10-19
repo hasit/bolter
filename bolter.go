@@ -170,7 +170,15 @@ func (i *impl) listBucketItems(bucket string, goBack bool) {
 		fmt.Fprintf(os.Stdout, "Query: "+getQuery+"\n\n")
 		res, err := kval.Query(i.kb, "GET "+getQuery)
 		if err != nil {
-			if err.Error() != "Cannot GOTO bucket, bucket not found" {
+			if err.Error() == "No Keys: There are no key::value pairs in this bucket" {
+				// no values in this bucket
+				fmt.Fprintf(os.Stdout, "> There are no key::value pairs in this bucket\n")
+				if i.root == true {
+					i.listBuckets()
+					return
+				}
+				i.listBucketItems(i.loc, true)
+			} else if err.Error() != "Cannot GOTO bucket, bucket not found" {
 				log.Fatal(err)
 			} else {
 				fmt.Fprintf(os.Stdout, "> Bucket not found\n")
