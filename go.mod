@@ -6,6 +6,7 @@ require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.22.1
 	github.com/spf13/cobra v1.6.0
+	go.etcd.io/bbolt v1.3.6
 )
 
 require (

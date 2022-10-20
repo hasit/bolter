@@ -1,4 +1,4 @@
-package main // import "github.com/hasit/bolter"
+package main
 
 import "github.com/hasit/bolter/cmd"
 

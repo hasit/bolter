@@ -42,7 +42,7 @@ var rootCmd = &cobra.Command{
 // Execute runs the root command and starts the application.
 func Execute() {
 	rootCmd.AddCommand(updateCmd)
-	rootCmd.PersistentFlags().String("file", "", "boltdb file to view")
+	rootCmd.PersistentFlags().StringP("file", "f", "", "boltdb file to view")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
