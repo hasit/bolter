@@ -42,8 +42,8 @@ COPYRIGHT:
 	app.Name = "bolter"
 	app.Usage = "view boltdb file interactively in your terminal"
 	app.Version = "2.0.1"
-	app.Authors = []*cli.Author{
-		&cli.Author{
+	app.Authors = []cli.Author{
+		{
 			Name:  "Hasit Mistry",
 			Email: "hasitnm@gmail.com",
 		},
